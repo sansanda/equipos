@@ -19,9 +19,10 @@ class TCal(Thread, Observer):
                  thermometer=Thermometer_I, results_file=None):
         """
 
-        :param threadname: An str with the name of the thread. :param temperature_profile: A list of integers with
-        the temperatures to be applied during the thermal calibration process. :param
-        temperature_stabilization_criteria: A tuple with the parameters that define the criteria of the temperature
+        :param threadname: An str with the name of the thread.
+        :param temperature_profile: A list of integers with
+        the temperatures to be applied during the thermal calibration process.
+        :param temperature_stabilization_criteria: A tuple with the parameters that define the criteria of the temperature
         stabilization (sampling_period_secs, number_of_samples_of_window, stdev, number_of_consequtive_windows).
         """
         self.n_samples_of_window = temperature_stabilization_criteria[1]

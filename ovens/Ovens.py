@@ -7,6 +7,9 @@ from temperature.Thermometers import Thermometer_I
 
 import abc
 
+# TODO: Seria más correcto llamar a Oven_I de otra manera. realmente lo que queremos decir es cualquier equipo al
+#  cual se le pueda settear la temperatura
+
 class Oven_I(metaclass=abc.ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):

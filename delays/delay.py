@@ -1,23 +1,18 @@
 import abc
 import time
+from threading import Thread
+
 
 class Delay_I(metaclass=abc.ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'start') and
-                callable(subclass.start) and
-                hasattr(subclass, 'pause') and
+        return (hasattr(subclass, 'pause') and
                 callable(subclass.pause) and
                 hasattr(subclass, 'resume') and
                 callable(subclass.resume) and
                 hasattr(subclass, 'abort') and
                 callable(subclass.abort) or
                 NotImplemented)
-
-    @abc.abstractmethod
-    def start(self):
-        """Executes the delays"""
-        raise NotImplementedError
 
     @abc.abstractmethod
     def pause(self):
@@ -34,24 +29,26 @@ class Delay_I(metaclass=abc.ABCMeta):
         """Abort the delays"""
         raise NotImplementedError
 
-class Time_Delay(Delay_I):
+class Time_Delay(Delay_I, Thread):
 
-    def __init__(self, mseconds):
+    def __init__(self, threadname, mseconds):
         self.delay_mseconds = mseconds
         self.paused = False
         self.aborted = False
 
-    def start(self):
+        Thread.__init__(self, name=threadname)
+
+    def run(self):
         #Aqui debemos hacer un bucle while true con chequeo de pause, resume y abort
         #Este será un metodo sincrono
         reference = int(round(time.time() * 1000))
         actual = reference
         while actual < (reference + self.delay_mseconds):
-            if not self.paused and not self.aborted:
-                actual = int(round(time.time() * 1000))
             if self.aborted:
                 self.aborted = False
-                return
+                continue
+            if not self.paused:
+                actual = int(round(time.time() * 1000))
         return
 
     def pause(self):
@@ -66,12 +63,12 @@ class Time_Delay(Delay_I):
         """Abort the delays"""
         self.aborted = True
 
-class Temperature_StDev_Delay(Delay_I):
+class Temperature_StDev_Delay(Delay_I, Thread):
 
     def __init__(self, stdev):
         self.stdev = stdev
 
-    def start(self):
+    def run(self):
         pass
 
     def pause(self):

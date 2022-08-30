@@ -15,9 +15,7 @@ class Temperature_Data_Logger_I(metaclass=abc.ABCMeta):
         return (hasattr(subclass, 'update_sampling_period') and
                 callable(subclass.update_sampling_period) and
                 hasattr(subclass, 'get_sampling_period') and
-                callable(subclass.get_sampling_period) and
-                hasattr(subclass, 'get_last_samples') and
-                callable(subclass.get_last_samples) or
+                callable(subclass.get_sampling_period) or
                 NotImplemented)
 
     @abc.abstractmethod
@@ -30,19 +28,22 @@ class Temperature_Data_Logger_I(metaclass=abc.ABCMeta):
         """Returns the temperature sampling peiod"""
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def get_last_samples(self, n):
-        """Returns a list with the last n samples"""
-        raise NotImplementedError
-
 
 class TemperatureDataLogger(Temperature_Data_Logger_I, Thread):
     """A concrete thermometer"""
 
-    def __init__(self, threadname="temperature_data_logger", thermometer=Thermometer_I, sampling_period_secs=1):
+    def __init__(self, threadname="temperature_data_logger",
+                 thermometer=Thermometer_I,
+                 sampling_period_secs=1,
+                 sampling_buffers=None):
+
         self.sampling_period = sampling_period_secs  # seconds
         self.thermometer = thermometer
-        self.sampling_buffer = Observable_List(None)
+        self.sampling_buffers = list()
+
+        if sampling_buffers is not None:
+            self.sampling_buffers.append(sampling_buffers)
+
         self.time = 0
 
         # For managing pause and resume the data_logger
@@ -51,8 +52,15 @@ class TemperatureDataLogger(Temperature_Data_Logger_I, Thread):
 
         Thread.__init__(self, name=threadname)
 
-    def addEvent(self, event):
-        self.sampling_buffer.addEvent(event)
+    def addEvent(self, buffer, event):
+        """
+        Add at event to an specific buffer
+        :param buffer: Observable List
+        :param event: str with the name of the event
+        :return: None
+        """
+        if buffer in self.sampling_buffers:
+            self.buffer.addEvent(event)
 
     def update_sampling_period(self, sampling_period_in_secs=1):
         """Set the temperature reading period"""
@@ -62,18 +70,12 @@ class TemperatureDataLogger(Temperature_Data_Logger_I, Thread):
         """Returns the temperature sampling peiod"""
         return self.sampling_period
 
-    @abc.abstractmethod
-    def get_last_samples(self, n):
-        """Returns a list with the last n samples"""
-        if n > len(self.sampling_buffer):
-            return None
-        return self.sampling_buffer[-n:]
-
     def run(self):
         printMessage("Starting Temperature Data Logger...", "*", "*")
         while True:
             self.can_run.wait()
-            self.sampling_buffer.append(self.thermometer.read_temperature())
+            for buffer in self.sampling_buffers:
+                buffer.append(self.thermometer.read_temperature())
             self.time = self.time + self.sampling_period
             sleep(self.sampling_period)
 
